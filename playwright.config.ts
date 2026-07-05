@@ -32,6 +32,9 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL: testBaseUrl,
+    launchOptions: {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    },
     trace: "retain-on-failure",
   },
   webServer: {
