@@ -35,7 +35,7 @@ export const appSchema = defineToolcraft({
               type: "paintSwatches",
             },
           },
-          title: "Colours",
+          title: "Pigments",
         },
         {
           controls: {
@@ -55,19 +55,6 @@ export const appSchema = defineToolcraft({
               target: "brush.hairType",
               type: "segmented",
             },
-            size: {
-              defaultValue: 4,
-              label: "Size",
-              max: 10,
-              min: 0,
-              orderRole: "primary",
-              performanceReason:
-                "Brush size changes the stamp radius for the next stroke deposit, touching more simulation texels per frame while the stroke is active.",
-              performanceRole: "workload",
-              step: 1,
-              target: "brush.size",
-              type: "slider",
-            },
             type: {
               defaultValue: "round",
               label: "Type",
@@ -82,6 +69,19 @@ export const appSchema = defineToolcraft({
               performanceRole: "responsiveness",
               target: "brush.type",
               type: "segmented",
+            },
+            size: {
+              defaultValue: 4,
+              label: "Size",
+              max: 10,
+              min: 0,
+              orderRole: "primary",
+              performanceReason:
+                "Brush size changes the stamp radius for the next stroke deposit, touching more simulation texels per frame while the stroke is active.",
+              performanceRole: "workload",
+              step: 1,
+              target: "brush.size",
+              type: "slider",
             },
           },
           title: "Brush",
@@ -122,7 +122,7 @@ export const appSchema = defineToolcraft({
               performanceReason:
                 "Clearing the mixing palette is a one-shot small fixed-size canvas clear.",
               performanceRole: "responsiveness",
-              target: "paint.mixingArea",
+              target: "paint.mixingArea.reset",
               type: "actions",
             },
           },
@@ -130,16 +130,6 @@ export const appSchema = defineToolcraft({
         },
         {
           controls: {
-            clear: {
-              actions: [{ icon: "eraser", label: "Clear", value: "canvas-clear-painting" }],
-              label: "Painting",
-              orderRole: "action",
-              performanceReason:
-                "Clearing writes a single blank frame to the existing simulation textures.",
-              performanceRole: "responsiveness",
-              target: "canvas.paintLayer",
-              type: "actions",
-            },
             dryingSpeed: {
               defaultValue: 40,
               label: "Drying speed",
@@ -181,6 +171,16 @@ export const appSchema = defineToolcraft({
               target: "paper.roughness",
               type: "slider",
               unit: "%",
+            },
+            clear: {
+              actions: [{ icon: "eraser", label: "Clear", value: "canvas-clear-painting" }],
+              label: "Painting",
+              orderRole: "action",
+              performanceReason:
+                "Clearing writes a single blank frame to the existing simulation textures.",
+              performanceRole: "responsiveness",
+              target: "canvas.paintLayer",
+              type: "actions",
             },
           },
           title: "Paper",
@@ -249,6 +249,38 @@ export const appSchema = defineToolcraft({
             },
           },
           title: "Watercolour Dynamics",
+        },
+        {
+          controls: {
+            include: {
+              defaultValue: true,
+              label: "Include",
+              orderRole: "primary",
+              performanceReason:
+                "Toggling background inclusion only changes which pixels the composite/export pass writes as transparent; it does not add render passes or change simulation resolution.",
+              performanceRole: "responsiveness",
+              target: "export.includeBackground",
+              type: "switch",
+            },
+            paperColor: {
+              defaultValue: "#f5eede",
+              label: false,
+              orderRole: "color",
+              performanceReason:
+                "The paper background color only changes the tint uniform consumed by the existing composite pass; it does not add render passes or change simulation resolution.",
+              performanceRole: "responsiveness",
+              target: "appearance.background",
+              type: "color",
+            },
+          },
+          layoutGroups: [
+            {
+              columns: 2,
+              controls: ["include", "paperColor"],
+              layout: "inline",
+            },
+          ],
+          title: "Background",
         },
         {
           controls: {

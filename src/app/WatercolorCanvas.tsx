@@ -2,10 +2,13 @@
 
 import * as React from "react";
 import { useToolcraft } from "@/toolcraft/runtime/react";
+import { shouldIncludeToolcraftPreviewBackground } from "@/toolcraft/runtime";
 
 import type { BrushShape, HairType, WatercolorParams } from "./watercolor-engine";
 import { WatercolorEngine } from "./watercolor-engine";
 import { defaultPigmentHex } from "./pigments";
+
+const DEFAULT_BACKGROUND_COLOR = "#f5eede";
 
 export type WatercolorCanvasApi = {
   clear: () => void;
@@ -36,6 +39,20 @@ function getCurrentPigmentValue(rawValue: unknown): CurrentPigmentValue {
   return { hex: defaultPigmentHex, pickedAt: 0 };
 }
 
+// The built-in "color" control commits {hex: string}, but a schema defaultValue is a plain string;
+// accept both shapes when reading the runtime value back out.
+function getColorHexValue(rawValue: unknown, fallbackHex: string): string {
+  if (typeof rawValue === "string") {
+    return rawValue;
+  }
+
+  if (rawValue && typeof rawValue === "object" && typeof (rawValue as { hex?: unknown }).hex === "string") {
+    return (rawValue as { hex: string }).hex;
+  }
+
+  return fallbackHex;
+}
+
 export function WatercolorCanvas({ apiRef }: WatercolorCanvasProps): React.JSX.Element {
   const { state } = useToolcraft();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -61,6 +78,11 @@ export function WatercolorCanvas({ apiRef }: WatercolorCanvasProps): React.JSX.E
   const edgeDarkening = ((state.values["dynamics.edgeDarkening"] as number | undefined) ?? 45) / 100;
   const pigmentOpacity = ((state.values["dynamics.pigmentOpacity"] as number | undefined) ?? 55) / 100;
   const currentPigment = getCurrentPigmentValue(state.values["paint.currentPigmentColor"]);
+  const backgroundColor = getColorHexValue(
+    state.values["appearance.background"],
+    DEFAULT_BACKGROUND_COLOR,
+  );
+  const includeBackground = shouldIncludeToolcraftPreviewBackground({ state });
 
   const backingWidth = Math.max(1, Math.round(cssWidth * getDevicePixelRatio() * renderScale));
   const backingHeight = Math.max(1, Math.round(cssHeight * getDevicePixelRatio() * renderScale));
@@ -88,12 +110,14 @@ export function WatercolorCanvas({ apiRef }: WatercolorCanvasProps): React.JSX.E
 
   function buildParams(): WatercolorParams {
     return {
+      backgroundColor,
       brushHairType,
       brushShape: brushType,
       brushSize,
       dryingSpeed,
       edgeDarkening,
       granulation,
+      includeBackground,
       pigmentHex: currentPigment.hex,
       pigmentOpacity,
       reliefHeight,
@@ -117,6 +141,8 @@ export function WatercolorCanvas({ apiRef }: WatercolorCanvasProps): React.JSX.E
     edgeDarkening,
     pigmentOpacity,
     currentPigment.hex,
+    backgroundColor,
+    includeBackground,
   ]);
 
   React.useEffect(() => {

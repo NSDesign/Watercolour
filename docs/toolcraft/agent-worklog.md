@@ -102,31 +102,44 @@ This mirrors `rendererPipeline` in `src/app/app-performance.ts`.
 
 ### Controls
 
-- Decision: Seven controls-panel sections: Colours, Brush, Water, Mixing, Canvas & Paper, Watercolour Dynamics, Image Export.
-- Reason: See Control Section Inventory in `src/app/app-acceptance.ts` (added in the implementation iteration).
-- Evidence: To be recorded with the schema/acceptance implementation.
+- Decision: Eight controls-panel sections: Pigments, Brush, Water, Mixing, Paper, Watercolour Dynamics, Background, Image Export.
+- Reason: See Control Section Inventory (`starterControlSectionInventory` in `src/app/app-acceptance.ts`) for the per-section entity/workflow-stage grouping reasons. "Colours" was renamed to "Pigments" because a bare "Colours"/"Colors" section title collides with the acceptance validator's UI-control-type-name rule (it must name the product entity, not a component type). Brush controls are ordered Hair type, Type, Size (mode selectors before the primary size slider) and Paper controls are ordered Drying speed, Relief height, Roughness, Clear (parameters before the action button) to satisfy the mode/input/primary-before-strength/detail/advanced/action ordering rule enforced by `getToolcraftControlOrderErrors`.
+- Evidence: `pnpm exec vitest run src/app/app-acceptance.test.ts` passes with the full `appAcceptance` matrix and `starterControlSectionInventory` filled in; `e2e/app-acceptance-watercolour.spec.ts` exercises every control's product-observable behavior; `e2e/app-browser-acceptance.spec.ts` (shared meta-validator) passes.
 
 ### Export
 
-- Decision: `Export PNG` sticky footer action; `Image Export` section with `export.image.format` (png/jpg) and `export.image.resolution` (2k/4k/8k).
-- Reason: Still-output product app per `docs/toolcraft/schema-reference.md`.
-- Evidence: To be recorded with export implementation and acceptance.
+- Decision: `Export PNG` sticky footer action; `Image Export` section with `export.image.format` (png/jpg) and `export.image.resolution` (2k/4k/8k); a required `Background` section (`export.includeBackground` Switch labeled "Include" plus an unlabeled `appearance.background` paper-tint Color control, one two-column inline row) directly before `Image Export`.
+- Reason: Still-output product app per `docs/toolcraft/schema-reference.md`. Every Toolcraft app that exposes `Export PNG` must expose a user-facing background color control and an `export.includeBackground` toggle so PNG export can produce a transparent-background image instead of hardcoding the product background (`schema-reference.md` "Export" section); this was missing from the first implementation pass and was added as a real bug fix, not just an acceptance-data placeholder. `appearance.background` doubles as the watercolour paper's base tint (previously a hardcoded shader constant), giving it real product meaning beyond satisfying the contract.
+- Evidence: `src/app/watercolor-engine.ts` composite fragment shader reads `uBackgroundColor`/`uIncludeBackground` and renders transparent pigment-only output when the background is excluded; `src/app/WatercolorCanvas.tsx` calls `shouldIncludeToolcraftPreviewBackground(state)` for live preview; `src/routes/index.tsx` passes `background`/`includeBackground` (from `shouldIncludeToolcraftPreviewBackground`) into `createToolcraftPngExportCanvas`. Covered by acceptance ids `export.includeBackground` and `appearance.background` in `src/app/app-acceptance.ts` and by browser tests in `e2e/app-acceptance-watercolour.spec.ts`.
 
 ### Performance
 
-- Decision: To be recorded in the implementation iteration once `app-performance.ts` stress fixtures are written.
-- Reason: Pending.
-- Evidence: Pending.
+- Decision: `src/app/app-performance.ts` declares 27 scenarios (one preview-render stress scenario, per-control drag/change scenarios for every slider/segmented/action/switch/color control including the later-added `paint.mixingArea.reset`, `export.includeBackground`, and `appearance.background`, viewport zoom/stability/animation-drag scenarios, and an 8K export scenario) plus the renderer technique/pipeline inventory documented above. A precomputed paper-heightmap texture (rendered once on init/resize/roughness-or-relief change, sampled by both the simulation and composite passes) replaced recomputing the noise function inline in both passes every frame — a real, hardware-agnostic optimization, though it did not materially change interaction latency under this sandbox's software GL rendering (see Verification).
+- Reason: The watercolour simulation runs a real per-pixel GPU pass every frame, so every control that can change simulation workload or responsiveness needs an explicit budget and stress fixture; see `docs/toolcraft/performance.md`.
+- Evidence: `pnpm exec vitest run src/app/app-performance-scenarios.test.ts` passes (27/27 scenarios well-formed); `pnpm exec playwright test e2e/app-performance.spec.ts` (the structural/meta-validator) passes. The functional browser runs in `e2e/app-performance-watercolour.spec.ts` are known to be slow in this sandbox because of software (SwiftShader-class) GL rendering (a single stroke at default size takes ~17-22s to render, confirmed via direct `requestAnimationFrame` instrumentation to be GPU-rasterization-bound, not shader-logic-bound) — an accepted environment limitation, not something further shader optimization can fix. This suite is not required to fully pass in this sandbox; the structural/meta-validator (`e2e/app-performance.spec.ts`) is what's verified.
 
 ## Evidence
 
-- Source reviewed: Local Toolcraft docs and runtime source listed above.
-- Contract applied: Single-controls-panel architecture confirmed against runtime source before finalizing layout; user confirmed the merged layout via `AskUserQuestion`.
+- Source reviewed: Local Toolcraft docs and runtime source listed above, plus `docs/toolcraft/schema-reference.md` "Export" section (background/transparency contract) re-read while filling in acceptance data.
+- Contract applied: Single-controls-panel architecture confirmed against runtime source before finalizing layout; user confirmed the merged layout via `AskUserQuestion`. Acceptance-authoring iteration additionally applied `acceptance-product-observable` (every control/action has a real automated + browser test) and the mandatory Export PNG background/transparency contract.
 
 ## Verification
 
-- Run: Pending — implementation has not started as of this entry.
+- Run: `pnpm typecheck` passes.
+- Run: `pnpm exec vitest run src` passes (266/266: `app-schema.test.ts`, `app-performance.test.ts`, `app-acceptance.test.ts`, `app-performance-scenarios.test.ts`, `app-acceptance-scenarios.test.ts`).
+- Run: `pnpm exec playwright test e2e/app-browser-acceptance.spec.ts e2e/app-performance.spec.ts` (shared structural/meta-validators) passes, 18/18.
+- Run: `pnpm exec playwright test e2e/app-controls.spec.ts` passes, 2/2, after fixing two stale assertions left over from the neutral-starter version (a "no Pigment field" check that no longer applies now that the Pigments section exists, and a pigment-swatch role mismatch — swatches are `role="radio"`, not `role="button"`).
+- Run: `pnpm exec playwright test e2e/app-acceptance-watercolour.spec.ts`, run to real completion across the full suite (batched due to serial-mode + ~1-2min/test under software GL rendering): 21/22 pass. The 22nd (`resolution scale renders a discrete slider...`) fails only on `expectToolcraftDiscreteSliderDragSmoothness`'s fixed 500ms interaction budget (observed ~31s), the same accepted software-GL-rendering limitation documented for the performance suite — not a product defect.
+- Real functional verification (not just structural) surfaced and fixed six genuine bugs, all now covered by passing tests:
+  1. `watercolor-engine.ts` WebGL2 context used `preserveDrawingBuffer: false`; external reads of the live canvas (e2e product-observable snapshots, and potentially any future screenshot/embed use) could see an already-cleared backbuffer. Fixed to `true`.
+  2. `getByRole("button", { name: "Reset" })` matched ambiguously against the runtime's per-section "Reset X section" tooltip buttons (substring name matching). Fixed with `exact: true`.
+  3. The built-in Switch primitive renders its visible label as an unassociated sibling (no `aria-label`/`aria-labelledby`), so `getByRole("switch", { name })` never resolves; fixed by scoping to the labeled Field and using an unnamed role query instead.
+  4. `appearance.background` (a built-in `color` control) commits `{hex: string}`, not a plain string; `WatercolorCanvas.tsx` and `src/routes/index.tsx` read it as a raw string, throwing `hex.replace is not a function` inside the composite draw call the first time a user changed it. Fixed by accepting both shapes.
+  5. The built-in Select's rendered options have no accessible name (their text sits inside a scroll-fade wrapper), so `getByRole("option", { name })` never resolves; fixed by matching option role + exact visible text instead.
+  6. The "Resolution" field label is a literal prefix of the built-in Runtime Setup "Resolution scale" field label, so the shared `getToolcraftFieldByLabel` prefix match resolved both; fixed by passing a negative-lookahead label at the one ambiguous call site.
+- Browser performance checkpoint: not required for the acceptance/testing feature loop; see Performance decision above for the accepted software-GL environment limitation.
 
 ## Risks
 
 - Risk: Scope is large (real-time GPU simulation, two custom controls, full acceptance/performance suites). Tracked via task list across the implementation session.
+- Risk: The background-exclusion composite path (transparent pigment-only export) is a new shader branch layered onto the existing composite pass; it only activates when `export.includeBackground` is turned off, so the default (background included) visual output is unchanged.

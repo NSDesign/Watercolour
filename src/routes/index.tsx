@@ -1,6 +1,10 @@
 import * as React from "react";
 import { ToolcraftApp } from "@/toolcraft/runtime/react";
-import { createToolcraftPngExportCanvas, getToolcraftImageExportSize } from "@/toolcraft/runtime";
+import {
+  createToolcraftPngExportCanvas,
+  getToolcraftImageExportSize,
+  shouldIncludeToolcraftPreviewBackground,
+} from "@/toolcraft/runtime";
 
 import { appSchema } from "../app/app-schema";
 import { MixingAreaControl } from "../app/MixingAreaControl";
@@ -52,8 +56,14 @@ export function AppHome(): React.JSX.Element {
 
           case "export-png": {
             const format = (state.values["export.image.format"] as "png" | "jpg" | undefined) ?? "png";
-            const resolution =
+            const imageResolution =
               (state.values["export.image.resolution"] as "2k" | "4k" | "8k" | undefined) ?? "4k";
+            const rawBackgroundColor = state.values["appearance.background"];
+            const backgroundColor =
+              typeof rawBackgroundColor === "string"
+                ? rawBackgroundColor
+                : (rawBackgroundColor as { hex?: string } | undefined)?.hex ?? "#f5eede";
+            const includeBackground = shouldIncludeToolcraftPreviewBackground({ state });
             const source = canvasApiRef.current?.getCompositeCanvas();
 
             if (!source) {
@@ -61,11 +71,12 @@ export function AppHome(): React.JSX.Element {
             }
 
             const exportCanvas = createToolcraftPngExportCanvas({
-              includeBackground: true,
+              background: backgroundColor,
+              includeBackground,
               render: ({ context, cssHeight, cssWidth }) => {
                 context.drawImage(source, 0, 0, cssWidth, cssHeight);
               },
-              resolution,
+              resolution: imageResolution,
               state,
             });
 
@@ -78,7 +89,7 @@ export function AppHome(): React.JSX.Element {
               throw new Error("Toolcraft watercolour export failed to encode image bytes.");
             }
 
-            const size = getToolcraftImageExportSize({ resolution, state });
+            const size = getToolcraftImageExportSize({ resolution: imageResolution, state });
             downloadBlob(
               blob,
               `watercolour-painting-${size.width}x${size.height}.${format === "jpg" ? "jpg" : "png"}`,

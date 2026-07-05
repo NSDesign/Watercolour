@@ -4,12 +4,14 @@ export type BrushShape = "round" | "filbert" | "square";
 export type HairType = "sable" | "hog";
 
 export type WatercolorParams = {
+  backgroundColor: string;
   brushHairType: HairType;
   brushShape: BrushShape;
   brushSize: number;
   dryingSpeed: number;
   edgeDarkening: number;
   granulation: number;
+  includeBackground: boolean;
   pigmentHex: string;
   pigmentOpacity: number;
   reliefHeight: number;
@@ -177,21 +179,35 @@ void main() {
 }
 `;
 
+// uBackgroundColor is the user-facing paper tint (appearance.background); uIncludeBackground
+// toggles whether the product-rendered paper background is composited at all (export.includeBackground).
+// When it is false, only the painted pigment ink remains, with alpha equal to pigment coverage, so
+// live preview reveals the runtime canvas shell/backing and PNG export produces a transparent paper.
 const COMPOSITE_FRAGMENT_SHADER_SOURCE = `
 precision highp float;
 varying vec2 vUv;
 
 uniform sampler2D uState;
 uniform sampler2D uPaperHeight;
+uniform vec3 uBackgroundColor;
+uniform bool uIncludeBackground;
 
 void main() {
   vec4 state = texture2D(uState, vUv);
   vec3 absorption = state.rgb;
   float height = texture2D(uPaperHeight, vUv).r;
-  vec3 paperColor = mix(vec3(0.93, 0.90, 0.82), vec3(0.99, 0.97, 0.92), height);
-  vec3 color = paperColor * (1.0 - clamp(absorption, 0.0, 1.0) * 0.88);
-  color += state.a * 0.04;
-  gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+
+  if (uIncludeBackground) {
+    vec3 lightPaper = clamp(uBackgroundColor + vec3(0.06, 0.07, 0.10), 0.0, 1.0);
+    vec3 paperColor = mix(uBackgroundColor, lightPaper, height);
+    vec3 color = paperColor * (1.0 - clamp(absorption, 0.0, 1.0) * 0.88);
+    color += state.a * 0.04;
+    gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+  } else {
+    float coverage = clamp(max(absorption.r, max(absorption.g, absorption.b)) * 1.15, 0.0, 1.0);
+    vec3 inkColor = vec3(1.0) * (1.0 - clamp(absorption, 0.0, 1.0) * 0.92) + state.a * 0.04;
+    gl_FragColor = vec4(clamp(inkColor, 0.0, 1.0), coverage);
+  }
 }
 `;
 
@@ -378,9 +394,13 @@ export class WatercolorEngine {
     }
 
     const gl = canvas.getContext("webgl2", {
-      alpha: false,
+      alpha: true,
       antialias: false,
-      preserveDrawingBuffer: false,
+      premultipliedAlpha: false,
+      // Required so external code (browser tests, screenshots) can read the live canvas via
+      // drawImage/getImageData at an arbitrary time; without it the backbuffer can be cleared
+      // between our own draw calls and an external read.
+      preserveDrawingBuffer: true,
     });
 
     if (!gl) {
@@ -614,6 +634,13 @@ export class WatercolorEngine {
 
     gl.uniform1i(gl.getUniformLocation(program, "uState"), 0);
     gl.uniform1i(gl.getUniformLocation(program, "uPaperHeight"), 1);
+
+    const [bgR, bgG, bgB] = hexToRgb01(this.params.backgroundColor);
+    gl.uniform3f(gl.getUniformLocation(program, "uBackgroundColor"), bgR, bgG, bgB);
+    gl.uniform1i(
+      gl.getUniformLocation(program, "uIncludeBackground"),
+      this.params.includeBackground ? 1 : 0,
+    );
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }

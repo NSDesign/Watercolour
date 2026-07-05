@@ -356,14 +356,444 @@ export const appTransferMode: ToolcraftTransferMode = {
 };
 
 export const appProductReadiness: ToolcraftProductReadiness = {
-  mode: "starter",
-  reason:
-    "Neutral Toolcraft template before a product schema, renderer, and acceptance matrix are authored.",
+  mode: "product",
+  productName: "Watercolour Painter",
+  productSummary:
+    "A single-page watercolour painting app: a WebGL2 pigment/wetness simulation canvas, a fixed 8-swatch pigment picker, an interactive mixing palette, brush/water/paper/dynamics controls, and PNG export.",
+  requestedBehavior:
+    "Build a watercolour painting app with a centered main canvas, brush settings (type, size, hair type), water refresh, 8 named pigment colours, an interactive mixing area, paper texture controls (roughness, relief height, drying speed), watercolour dynamics simulation controls (wetness spread, granulation, edge darkening, pigment opacity), and PNG image export.",
 };
 
-export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [];
+export const starterControlSectionInventory: readonly ToolcraftControlSectionInventoryEntry[] = [
+  {
+    entity: "pigment",
+    groupingReason:
+      "The fixed 8-swatch pigment picker is the whole product entity for this section: it owns the single shared active-pigment reference the brush deposits and the mixing palette samples.",
+    targets: ["paint.currentPigmentColor"],
+    title: "Pigments",
+    workflowStage: "preset-select",
+  },
+  {
+    entity: "brush",
+    groupingReason:
+      "Hair type, brush type, and size are the three parameters of one product entity, the brush, that shape every stroke deposit stamp.",
+    targets: ["brush.hairType", "brush.type", "brush.size"],
+    title: "Brush",
+  },
+  {
+    entity: "brush water",
+    groupingReason:
+      "Refresh is the single command for the brush's water/pigment charge, a distinct depleting resource from the static brush shape settings.",
+    targets: ["brush.waterCharge"],
+    title: "Water",
+    workflowStage: "action",
+  },
+  {
+    entity: "mixing palette",
+    groupingReason:
+      "The interactive mixing palette canvas and its Reset action both operate on the same mixing-palette runtime state and belong together as one workflow stage.",
+    targets: ["paint.mixingArea", "paint.mixingArea.reset"],
+    title: "Mixing",
+    workflowStage: "custom-mix",
+  },
+  {
+    entity: "paper",
+    groupingReason:
+      "Drying speed, relief height, and roughness are the paper's own procedural texture parameters, and Clear wipes the same paint layer painted onto that paper, so all four stay in one Paper section.",
+    targets: [
+      "paper.dryingSpeed",
+      "paper.reliefHeight",
+      "paper.roughness",
+      "canvas.paintLayer",
+    ],
+    title: "Paper",
+  },
+  {
+    entity: "watercolour dynamics",
+    groupingReason:
+      "Edge darkening, granulation, pigment opacity, and wetness spread are the four simulation parameters that drive the shared diffusion/evaporation/granulation/edge-darkening pass; grouping them lets a painter tune the wet-media behaviour as one workflow stage.",
+    targets: [
+      "dynamics.edgeDarkening",
+      "dynamics.granulation",
+      "dynamics.pigmentOpacity",
+      "dynamics.wetnessSpread",
+    ],
+    title: "Watercolour Dynamics",
+  },
+  {
+    entity: "background",
+    groupingReason:
+      "Include and the paper background color are the mandatory PNG export background pair: a toggle plus the color it toggles, rendered as one two-column row.",
+    targets: ["export.includeBackground", "appearance.background"],
+    title: "Background",
+  },
+  {
+    entity: "image export",
+    groupingReason:
+      "Format and resolution are the two settings of the one-shot PNG export action and always render together directly above the sticky Export PNG footer action.",
+    targets: ["export.image.format", "export.image.resolution"],
+    title: "Image Export",
+  },
+];
 
-export const starterControlSectionInventory: readonly ToolcraftControlSectionInventoryEntry[] = [];
+export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
+  {
+    automated: true,
+    automatedTestName:
+      "acceptance: resolution scale renders a discrete slider and changes canvas backing pixels",
+    browser: true,
+    browserTestName:
+      "acceptance: resolution scale renders a discrete slider and changes canvas backing pixels",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Runtime Setup's Resolution scale renders as a discrete slider with tick markers, and dragging it changes the watercolour canvas backing pixel resolution.",
+    fixture: "Fresh watercolour canvas at the default Resolution scale.",
+    id: "canvas.renderScale",
+    kind: "control",
+    target: "canvas.renderScale",
+    userAction: "Drag the Runtime Setup Resolution scale slider and paint a stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: pigment swatch selection changes the active pigment and next stroke color",
+    browser: true,
+    browserTestName: "acceptance: pigment swatch selection changes the active pigment and next stroke color",
+    builtInFitCheck: {
+      checkedBuiltIns: ["palette", "color", "segmented", "actions", "collectionActions"],
+      closestBuiltIn: "palette",
+      productObservable:
+        "Clicking a swatch writes {hex, pickedAt} to the shared paint.currentPigmentColor target, refills brush water charge, and changes the pigment color deposited by the next stroke on the watercolour canvas.",
+      whyInsufficient:
+        "Palette exposes a family/shade grid, not eight fixed named pigment identities, and cannot write a compound {hex, pickedAt} value that also drives a brush-recharge side effect. Color opens a color-wheel editor instead of a fixed named-swatch picker. Segmented caps at 4 options and 24 total label characters, far short of 8 named pigments. No built-in control renders fixed named swatches while writing a compound value with a pick timestamp.",
+    },
+    componentType: "paintSwatches",
+    customControlCoverage: "all-custom-control-behavior",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Clicking a pigment swatch (for example Orange) and then dragging a stroke deposits that pigment's color on the watercolour canvas instead of the previously selected pigment, and the brush water charge is restored to full.",
+    fixture: "Fresh watercolour canvas with the default Red pigment selected.",
+    id: "paint.currentPigmentColor",
+    kind: "control",
+    target: "paint.currentPigmentColor",
+    userAction: "Click the Orange pigment swatch, then drag a stroke across the canvas.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: hair type selection changes stroke bristle texture",
+    browser: true,
+    browserTestName: "acceptance: hair type selection changes stroke bristle texture",
+    componentType: "segmented",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Switching Hair type from Sable to Hog and drawing a stroke produces a visibly rougher, more broken bristle-edge texture along the stroke instead of Sable's smooth continuous edge.",
+    fixture: "Fresh watercolour canvas with default Sable hair type.",
+    id: "brush.hairType",
+    kind: "control",
+    optionCoverage: "each-visible-item",
+    target: "brush.hairType",
+    userAction: "Click Hog, drag a stroke, then click Sable and drag another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: brush type selection changes stroke stamp shape",
+    browser: true,
+    browserTestName: "acceptance: brush type selection changes stroke stamp shape",
+    componentType: "segmented",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Switching Brush type between Round, Filbert, and Square changes the stamp shape deposited by a single click (round vs. flattened-oval vs. square-cornered mark) on the watercolour canvas.",
+    fixture: "Fresh watercolour canvas with default Round brush type.",
+    id: "brush.type",
+    kind: "control",
+    optionCoverage: "each-visible-item",
+    target: "brush.type",
+    userAction: "Click Filbert, click Square, then click Round, depositing a stamp after each selection.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: brush size drag changes deposited stroke width",
+    browser: true,
+    browserTestName: "acceptance: brush size drag changes deposited stroke width",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Dragging Size from its default toward its maximum and drawing a stroke deposits a visibly wider band of pigment than the same stroke drawn at the minimum size.",
+    fixture: "Fresh watercolour canvas with default brush size 4.",
+    id: "brush.size",
+    kind: "control",
+    target: "brush.size",
+    userAction: "Drag the Size slider to its maximum, draw a stroke, drag it to its minimum, and draw another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: refresh restores brush water charge after a stroke depletes it",
+    browser: true,
+    browserTestName: "acceptance: refresh restores brush water charge after a stroke depletes it",
+    componentType: "actions",
+    evidence: "command-side-effect",
+    expectedObservable:
+      "After a long stroke depletes brush water charge (later parts of the stroke deposit lighter, drier pigment), clicking Refresh restores full charge so the next stroke deposits at full strength again.",
+    fixture: "A long dragged stroke that visibly depletes brush charge before Refresh is clicked.",
+    id: "brush.waterCharge",
+    kind: "control",
+    target: "brush.waterCharge",
+    userAction: "Drag a long stroke to deplete charge, click Refresh, then draw a fresh stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: mixing palette drag deposits pigment and sample click updates the active pigment",
+    browser: true,
+    browserTestName: "acceptance: mixing palette drag deposits pigment and sample click updates the active pigment",
+    builtInFitCheck: {
+      checkedBuiltIns: ["palette", "color", "collectionActions", "actions"],
+      closestBuiltIn: "palette",
+      productObservable:
+        "Dragging on the 128x128 mixing canvas blends soft pigment dabs of the currently selected pigment directly into the palette pixels; a plain click (no drag) samples the pixel color under the pointer and cross-writes paint.currentPigmentColor directly via controls.setValue, bypassing this control's own bound target.",
+      whyInsufficient:
+        "Palette only offers a fixed family/shade grid, not a freeform paintable canvas that blends dragged dabs and samples arbitrary pixel colors. Color offers a single color-wheel value, not an interactive mixing surface. No built-in control both draws into a persisted pixel buffer and cross-writes a sibling control's target from a pointer sample.",
+    },
+    componentType: "mixingArea",
+    customControlCoverage: "all-custom-control-behavior",
+    evidence: "rendered-pixels",
+    fixture: "Blue pigment selected, mixing palette canvas empty.",
+    id: "paint.mixingArea",
+    kind: "control",
+    target: "paint.mixingArea",
+    userAction:
+      "Drag across the mixing palette canvas to deposit and blend a Blue pigment dab, then click once (no drag) on a different area to sample its color and confirm the active pigment swatch reference updates.",
+    expectedObservable:
+      "Dragging across the mixing palette visibly deposits and blends a soft pigment dab at the pointer path; a subsequent plain click (no drag) samples the pixel color under the pointer and updates paint.currentPigmentColor, which is then reflected the next time a stroke is drawn on the main canvas.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: mixing palette reset clears the palette back to empty",
+    browser: true,
+    browserTestName: "acceptance: mixing palette reset clears the palette back to empty",
+    componentType: "actions",
+    evidence: "command-side-effect",
+    expectedObservable:
+      "After dragging pigment dabs onto the mixing palette, clicking Reset clears the palette canvas back to its empty starting state ({pixels: null}).",
+    fixture: "Mixing palette with at least one dragged pigment dab present.",
+    id: "paint.mixingArea.reset",
+    kind: "control",
+    target: "paint.mixingArea.reset",
+    userAction: "Drag a pigment dab onto the mixing palette, then click Reset.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: drying speed changes how quickly wet edges dry on the canvas",
+    browser: true,
+    browserTestName: "acceptance: drying speed changes how quickly wet edges dry on the canvas",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Drying speed to its maximum and painting a stroke causes the wet look (backrun/edge-darkening) to fade to a dry, settled look noticeably faster than the same stroke at the minimum drying speed.",
+    fixture: "Fresh watercolour canvas with a painted stroke, sampled shortly after the stroke ends.",
+    id: "paper.dryingSpeed",
+    kind: "control",
+    target: "paper.dryingSpeed",
+    userAction: "Set Drying speed to maximum, paint a stroke, and wait briefly while sampling canvas pixels.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: relief height changes visible paper texture granulation contrast",
+    browser: true,
+    browserTestName: "acceptance: relief height changes visible paper texture granulation contrast",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Relief height to its maximum increases the visible paper-grain contrast of a painted stroke (pigment settling unevenly into the taller paper heightmap) compared to the same stroke at the minimum relief height.",
+    fixture: "Fresh watercolour canvas with a painted stroke.",
+    id: "paper.reliefHeight",
+    kind: "control",
+    target: "paper.reliefHeight",
+    userAction: "Set Relief height to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: roughness changes visible paper texture frequency",
+    browser: true,
+    browserTestName: "acceptance: roughness changes visible paper texture frequency",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Roughness to its maximum produces a visibly finer, higher-frequency paper grain pattern under a painted stroke than the same stroke at the minimum roughness.",
+    fixture: "Fresh watercolour canvas with a painted stroke.",
+    id: "paper.roughness",
+    kind: "control",
+    target: "paper.roughness",
+    userAction: "Set Roughness to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: clear wipes the painted canvas back to blank paper",
+    browser: true,
+    browserTestName: "acceptance: clear wipes the painted canvas back to blank paper",
+    componentType: "actions",
+    evidence: "command-side-effect",
+    expectedObservable:
+      "After painting a visible stroke, clicking Clear wipes the canvas back to blank paper with no remaining pigment.",
+    fixture: "Watercolour canvas with a painted stroke present.",
+    id: "canvas.paintLayer",
+    kind: "control",
+    target: "canvas.paintLayer",
+    userAction: "Paint a stroke, then click Clear.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: edge darkening changes visible backrun contrast at wet/dry boundaries",
+    browser: true,
+    browserTestName: "acceptance: edge darkening changes visible backrun contrast at wet/dry boundaries",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Edge darkening to its maximum produces a visibly darker rim/backrun along the drying edge of a painted stroke than the same stroke at the minimum edge darkening.",
+    fixture: "Fresh watercolour canvas with a painted stroke sampled while still drying.",
+    id: "dynamics.edgeDarkening",
+    kind: "control",
+    target: "dynamics.edgeDarkening",
+    userAction: "Set Edge darkening to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: granulation changes visible pigment settling texture",
+    browser: true,
+    browserTestName: "acceptance: granulation changes visible pigment settling texture",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Granulation to its maximum produces visibly grainier, unevenly settled pigment in a painted stroke compared to the same stroke at the minimum granulation.",
+    fixture: "Fresh watercolour canvas with a painted stroke.",
+    id: "dynamics.granulation",
+    kind: "control",
+    target: "dynamics.granulation",
+    userAction: "Set Granulation to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: pigment opacity changes how strongly a single stroke lands",
+    browser: true,
+    browserTestName: "acceptance: pigment opacity changes how strongly a single stroke lands",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Pigment opacity to its maximum makes a single stroke land at a visibly darker/stronger absorption than the same stroke drawn at the minimum pigment opacity.",
+    fixture: "Fresh watercolour canvas with a painted stroke.",
+    id: "dynamics.pigmentOpacity",
+    kind: "control",
+    target: "dynamics.pigmentOpacity",
+    userAction: "Set Pigment opacity to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: wetness spread changes how far a stroke bleeds into neighbouring paper",
+    browser: true,
+    browserTestName: "acceptance: wetness spread changes how far a stroke bleeds into neighbouring paper",
+    componentType: "slider",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Setting Wetness spread to its maximum makes a painted stroke visibly bleed/diffuse further into neighbouring paper than the same stroke at the minimum wetness spread.",
+    fixture: "Fresh watercolour canvas with a painted stroke sampled while still wet.",
+    id: "dynamics.wetnessSpread",
+    kind: "control",
+    target: "dynamics.wetnessSpread",
+    userAction: "Set Wetness spread to maximum, paint a stroke, then set it to minimum and paint another stroke.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: include toggle hides the paper background in preview and export",
+    browser: true,
+    browserTestName: "acceptance: include toggle hides the paper background in preview and export",
+    componentType: "switch",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Turning Include off makes the exported PNG's paper background transparent (alpha channel), and hides the live watercolour canvas preview's painted paper background so only pigment ink remains visible; this app has no video export, but the platform's video export path always keeps the background regardless of this toggle.",
+    fixture: "Watercolour canvas with a painted stroke, Include toggled off.",
+    id: "export.includeBackground",
+    kind: "control",
+    target: "export.includeBackground",
+    userAction: "Paint a stroke, turn Include off, and observe the canvas preview and an exported PNG.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: background color changes the paper tint in preview and export",
+    browser: true,
+    browserTestName: "acceptance: background color changes the paper tint in preview and export",
+    componentType: "color",
+    evidence: "rendered-pixels",
+    expectedObservable:
+      "Changing the Background color swatch changes the paper tint visible under the painted pigment on the watercolour canvas and in the exported PNG.",
+    fixture: "Fresh watercolour canvas with the default paper tint.",
+    id: "appearance.background",
+    kind: "control",
+    target: "appearance.background",
+    userAction: "Open the Background color control and pick a different color.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: image format selection changes the exported file's mime type",
+    browser: true,
+    browserTestName: "acceptance: image format selection changes the exported file's mime type",
+    componentType: "select",
+    evidence: "exported-bytes",
+    expectedObservable:
+      "Selecting JPEG and exporting downloads a .jpg file with image/jpeg bytes instead of the default PNG file with image/png bytes.",
+    fixture: "Watercolour canvas with a painted stroke.",
+    id: "export.image.format",
+    kind: "control",
+    optionCoverage: "each-visible-item",
+    target: "export.image.format",
+    userAction: "Select JPEG in Image Export Format, then click Export PNG and inspect the downloaded file.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: image resolution selection changes the exported file's pixel dimensions",
+    browser: true,
+    browserTestName: "acceptance: image resolution selection changes the exported file's pixel dimensions",
+    componentType: "select",
+    evidence: "exported-bytes",
+    expectedObservable:
+      "Selecting 2K, 4K, or 8K resolution and exporting produces a decoded PNG whose long-edge pixel dimension matches the selected resolution (2048/4096/8192px).",
+    fixture: "Watercolour canvas with a painted stroke.",
+    id: "export.image.resolution",
+    kind: "control",
+    optionCoverage: "each-visible-item",
+    target: "export.image.resolution",
+    userAction: "Select 2K in Image Export Resolution, then click Export PNG and decode the downloaded image.",
+  },
+  {
+    actionCoverage: ["export-png"],
+    automated: true,
+    automatedTestName: "acceptance: export png footer action downloads a painted PNG",
+    browser: true,
+    browserTestName: "acceptance: export png footer action downloads a painted PNG",
+    componentType: "panelActions",
+    evidence: "exported-bytes",
+    expectedObservable:
+      "Clicking Export PNG downloads a PNG (or JPEG, per Format) file whose pixel dimensions match the selected Image Export Resolution and whose content includes the painted pigment.",
+    fixture: "Watercolour canvas with a painted stroke.",
+    id: "panel.actions",
+    kind: "control",
+    target: "panel.actions",
+    userAction: "Paint a stroke, then click Export PNG.",
+  },
+  {
+    automated: true,
+    automatedTestName: "acceptance: persisted brush and paper settings restore after a real browser reload",
+    browser: true,
+    browserTestName: "acceptance: persisted brush and paper settings restore after a real browser reload",
+    componentType: "runtime",
+    evidence: "persistence-state",
+    expectedObservable:
+      "After changing Brush size and reloading the browser page, the reloaded app restores the previously set Brush size instead of resetting to its default value.",
+    fixture: "Fresh app load, Brush size changed away from its default.",
+    id: "runtime.persistence.reload",
+    kind: "runtime",
+    persistenceCoverage: "reload",
+    userAction: "Change Brush size away from its default, reload the browser page, and read the restored Size value.",
+  },
+];
 
 function getActionValue(action: ToolcraftActionSchema | string): string {
   return typeof action === "string" ? action : action.value;

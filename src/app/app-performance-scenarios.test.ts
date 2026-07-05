@@ -84,6 +84,20 @@ describe("watercolour app performance scenarios are well-formed", () => {
     expect(getScenario("mixing-area-control-change").target).toBe("paint.mixingArea");
   });
 
+  test("perf: mixing-reset-control-change scenario is well-formed", () => {
+    expect(getScenario("mixing-reset-control-change").target).toBe("paint.mixingArea.reset");
+  });
+
+  test("perf: export-include-background-control-change scenario is well-formed", () => {
+    expect(getScenario("export-include-background-control-change").target).toBe(
+      "export.includeBackground",
+    );
+  });
+
+  test("perf: background-color-control-change scenario is well-formed", () => {
+    expect(getScenario("background-color-control-change").target).toBe("appearance.background");
+  });
+
   test("perf: canvas-clear-control-change scenario is well-formed", () => {
     expect(getScenario("canvas-clear-control-change").target).toBe("canvas.paintLayer");
   });

@@ -122,9 +122,12 @@ export const appPerformance: ToolcraftPerformanceConfig = defineToolcraftPerform
           "paint.currentPigmentColor",
           "brush.waterCharge",
           "paint.mixingArea",
+          "paint.mixingArea.reset",
           "canvas.paintLayer",
           "export.image.resolution",
           "export.image.format",
+          "export.includeBackground",
+          "appearance.background",
         ],
       },
       {
@@ -441,6 +444,34 @@ export const appPerformance: ToolcraftPerformanceConfig = defineToolcraftPerform
       id: "mixing-area-control-change",
       target: "paint.mixingArea",
       uiSelector: mixingAreaSelector,
+    }),
+    controlChangeScenario({
+      automatedTestName: "perf: mixing-reset-control-change scenario is well-formed",
+      browserTestName: "browser perf: mixing palette reset action stays responsive",
+      expectedObservable:
+        "Clicking the Mixing section Reset action clears the palette back to empty without blocking the UI thread.",
+      fixtureNote: "Drag a pigment dab onto the mixing palette, then click the Mixing section Reset action.",
+      id: "mixing-reset-control-change",
+      target: "paint.mixingArea.reset",
+      uiSelector: mixingAreaSelector,
+    }),
+    controlChangeScenario({
+      automatedTestName: "perf: export-include-background-control-change scenario is well-formed",
+      browserTestName: "browser perf: include background toggle stays responsive",
+      expectedObservable:
+        "Toggling Include updates the live preview background visibility without blocking the UI thread.",
+      fixtureNote: "Toggle the Background section Include switch off and back on.",
+      id: "export-include-background-control-change",
+      target: "export.includeBackground",
+    }),
+    controlChangeScenario({
+      automatedTestName: "perf: background-color-control-change scenario is well-formed",
+      browserTestName: "browser perf: background color change stays responsive",
+      expectedObservable:
+        "Changing the Background section color updates the paper tint in the live preview without blocking the UI thread.",
+      fixtureNote: "Open the Background color control and pick a different color.",
+      id: "background-color-control-change",
+      target: "appearance.background",
     }),
     controlChangeScenario({
       automatedTestName: "perf: canvas-clear-control-change scenario is well-formed",

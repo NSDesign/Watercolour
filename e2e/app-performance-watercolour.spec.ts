@@ -335,6 +335,49 @@ test("browser perf: mixing palette interactions stay responsive", async ({ page 
   expectToolcraftScenarioPerformanceBudget(result, appPerformance, "mixing-area-control-change");
 });
 
+test("browser perf: mixing palette reset action stays responsive", async ({ page }) => {
+  const mixingCanvas = page.locator('[data-toolcraft-mixing-area="true"] canvas');
+  await mixingCanvas.scrollIntoViewIfNeeded();
+  const box = await mixingCanvas.boundingBox();
+  if (!box) {
+    throw new Error("Mixing area canvas not found.");
+  }
+
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 60, box.y + 60, { steps: 6 });
+  await page.mouse.up();
+
+  const result = await measureToolcraftInteraction(page, async () => {
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+  });
+
+  await expect(mixingCanvas).toBeVisible();
+  expectToolcraftScenarioPerformanceBudget(result, appPerformance, "mixing-reset-control-change");
+});
+
+test("browser perf: include background toggle stays responsive", async ({ page }) => {
+  const includeField = await getToolcraftFieldByLabel(page, "Include");
+
+  const result = await measureToolcraftInteraction(page, async () => {
+    await includeField.getByRole("switch").click();
+  });
+
+  await expect(page.locator('[data-toolcraft-watercolor-canvas="true"]')).toBeVisible();
+  expectToolcraftScenarioPerformanceBudget(result, appPerformance, "export-include-background-control-change");
+});
+
+test("browser perf: background color change stays responsive", async ({ page }) => {
+  const result = await measureToolcraftInteraction(page, async () => {
+    const hexInput = page.getByLabel("paperColor hex");
+    await hexInput.fill("336699");
+    await hexInput.press("Enter");
+  });
+
+  await expect(page.locator('[data-toolcraft-watercolor-canvas="true"]')).toBeVisible();
+  expectToolcraftScenarioPerformanceBudget(result, appPerformance, "background-color-control-change");
+});
+
 test("browser perf: clear painting action stays responsive", async ({ page }) => {
   await paintStroke(page);
 

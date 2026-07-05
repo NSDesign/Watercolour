@@ -1222,7 +1222,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       panels: {},
     });
 
-    expect(validateToolcraftAcceptanceCoverage(schema, [])).toEqual(
+    expect(validateToolcraftAcceptanceCoverage(schema, [], appTransferMode, [])).toEqual(
       expect.arrayContaining([
         "Generated Toolcraft apps must define a controls panel so the mandatory runtime Setup section is visible.",
       ]),
@@ -1289,7 +1289,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "media.source",
           userAction: "Upload a source image, then clear the preview.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Source / source (media.source) fileDrop acceptance must prove upload/import, clear/remove, and section or global reset restore default source media or remove uploaded source media when no default exists.",
@@ -1348,7 +1348,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Upload a source image, clear it, use Reset controls, rotate 90°, flip horizontal, and verify runtime media transform metadata is consumed by preview.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       "Source / source (media.source) fileDrop acceptance must prove predefined media.defaultAssets render as attached files, can be removed to an empty source/canvas state, and are restored by section or global Reset.",
     );
@@ -1394,7 +1394,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         userAction:
           "Upload a source image, rotate it, flip it, clear it, upload again, then use section reset and Reset controls.",
       },
-    ]);
+    ], appTransferMode, []);
 
     expect(
       errors.filter((error) => error.includes("fileDrop acceptance")),
@@ -1443,7 +1443,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Upload two source images, rotate one, flip it, clear the images, and use Reset controls.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Source / sources (media.sources) multiple fileDrop acceptance must prove thumbnail/file reorder updates runtime media order and that preview, renderer, or export consumes that order.",
@@ -1468,7 +1468,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Upload two source images, drag to reorder thumbnails, rotate and flip the selected image, clear them, then use section reset and Reset controls.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -1563,7 +1563,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       },
     });
 
-    expect(validateToolcraftAcceptanceCoverage(fixedOutputSchema, appAcceptance)).toEqual(
+    expect(validateToolcraftAcceptanceCoverage(fixedOutputSchema, appAcceptance, appTransferMode, [])).toEqual(
       expect.arrayContaining([
         'canvas.sizing mode "fixed-output" requires a runtime acceptance entry with canvasSizingCoverage "fixed-output-size" explaining why width and height are intentionally non-editable. Product/output apps must use "editable-output"; user-provided, reference, fixed-format, or base/default sizes belong in canvas.size as editable initial values.',
       ]),
@@ -1615,7 +1615,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           kind: "runtime",
           userAction: "Open the app.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'canvas.sizing canvasSizingCoverage "fixed-output-size" must explain why the output dimensions are intentionally fixed for a non-product/internal fixture, not merely initialized from a default size.',
@@ -1669,7 +1669,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           kind: "runtime",
           userAction: "Open the app.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining("cannot be justified by the reference or previous app lacking a size editor"),
@@ -1726,7 +1726,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           kind: "runtime",
           userAction: "Open the app.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Product/output apps with export actions must use canvas.sizing mode "editable-output" so Aspect ratio, Canvas width, and Canvas height are always available. Put reference, fixed-format, or user-requested dimensions in canvas.size as the initial value instead of hiding size controls with "fixed-output".',
@@ -1749,7 +1749,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       },
     });
 
-    expect(validateToolcraftAcceptanceCoverage(intrinsicUploadSchema, appAcceptance)).toEqual(
+    expect(validateToolcraftAcceptanceCoverage(intrinsicUploadSchema, appAcceptance, appTransferMode, [])).toEqual(
       expect.arrayContaining([
         'canvas.sizing mode "intrinsic-media" with upload requires a runtime acceptance entry with canvasSizingCoverage "intrinsic-media-size" proving the app is a true media-viewer/source-native product where imported media natural dimensions intentionally own canvas.size. Uploaded background/source images inside product canvases must use "editable-output" and keep the current canvas size.',
       ]),
@@ -1773,7 +1773,6 @@ describe("Toolcraft template app acceptance coverage", () => {
 
     expect(
       validateToolcraftAcceptanceCoverage(intrinsicUploadSchema, [
-        ...appAcceptance,
         {
           automated: true,
           automatedTestName: "media viewer uses uploaded natural dimensions",
@@ -1789,7 +1788,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           kind: "runtime",
           userAction: "Upload an image with known natural dimensions.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -1838,7 +1837,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "appearance.opacity",
           userAction: "Drag the Opacity slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'persistence.storage "localStorage" requires a runtime acceptance entry with persistenceCoverage "reload" proving user-edited persisted state restores after a real browser reload. Settings import/export is not a substitute for persistence.',
@@ -1906,7 +1905,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "persistence.reload",
           userAction: "Export settings, clear controls, and import settings.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'persistence.reload persistenceCoverage "reload" must describe changing a user-facing setting, reloading the browser page, and observing the restored value/output.',
@@ -1920,8 +1919,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(
         complexSchema,
-        createMandatorySetupAcceptance(),
-      ),
+        createMandatorySetupAcceptance(), appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -1929,8 +1927,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const smallSchema = createMandatorySetupWithCanvasSizeSchema();
     const errors = validateToolcraftAcceptanceCoverage(
       smallSchema,
-      createMandatorySetupWithCanvasSizeAcceptance(),
-    );
+      createMandatorySetupWithCanvasSizeAcceptance(), appTransferMode, []);
 
     expect(errors).toEqual([]);
   });
@@ -1957,7 +1954,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       ...createMandatorySetupAcceptance(),
     ];
 
-    expect(validateToolcraftAcceptanceCoverage(complexSchema, acceptance)).toEqual([]);
+    expect(validateToolcraftAcceptanceCoverage(complexSchema, acceptance, appTransferMode, [])).toEqual([]);
   });
 
   it("rejects app-authored controls that try to own runtime setup targets", () => {
@@ -2001,7 +1998,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       },
     });
 
-    expect(validateToolcraftAcceptanceCoverage(schema, [])).toEqual(
+    expect(validateToolcraftAcceptanceCoverage(schema, [], appTransferMode, [])).toEqual(
       expect.arrayContaining([
         'Runtime Setup must not include the Timeline switch unless panels.timeline is enabled.',
         'Runtime Duplicates / manualWidth uses runtime Setup target "canvas.size.width". Runtime Setup owns Export Settings, Import Settings, Aspect ratio, Canvas width, Canvas height, Resolution scale, and Timeline; do not declare these controls in app-authored sections.',
@@ -2166,7 +2163,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     }));
 
     expect(
-      validateToolcraftAcceptanceCoverage(compoundSchema, acceptance),
+      validateToolcraftAcceptanceCoverage(compoundSchema, acceptance, appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Mesh / anchor (mesh.anchor) must declare controlPartCoverage for every semantic value part: anchorGrid.position.",
@@ -2230,7 +2227,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         target: "animation.easing",
         userAction: "Drag an Easing curve point.",
       },
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -2298,7 +2295,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         target: "shape.bendCurve",
         userAction: "Drag a Bend curve point.",
       },
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).toEqual(
       expect.arrayContaining([
@@ -2348,7 +2345,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "glyph.ramp",
           userAction: "Upload, reorder, and remove glyphs.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       "Glyphs / glyphRamp (glyph.ramp) is a custom control and must declare customControlCoverage for: built-in-gap, kit-primitives, minimal-ui, product-output, runtime-state.",
     );
@@ -2402,7 +2399,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "glyph.ramp",
           userAction: "Upload, reorder, and remove glyphs.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       "Glyphs / glyphRamp (glyph.ramp) is a custom control and must declare builtInFitCheck with checkedBuiltIns, closestBuiltIn, whyInsufficient, and productObservable.",
     );
@@ -2464,7 +2461,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "glyph.ramp",
           userAction: "Upload, reorder, and remove glyphs.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([
       "Glyphs / glyphRamp (glyph.ramp) builtInFitCheck.checkedBuiltIns contains unknown built-in controls: imaginaryPicker.",
       'Glyphs / glyphRamp (glyph.ramp) builtInFitCheck.closestBuiltIn must be one of the checked built-ins or "none".',
@@ -2530,7 +2527,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Add each mask shape, select a mask in the list, delete one mask, drag a canvas mask handle, and resize a selected mask.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([
       "Masks / maskEditor (masks) builtInFitCheck.checkedBuiltIns must include collectionActions when the custom control owns a growable, removable, selectable, or reorderable runtime item set.",
       "Masks / maskEditor (masks) builtInFitCheck.checkedBuiltIns must include actions when the custom control exposes local command buttons such as add, remove, delete, duplicate, sort, normalize, or clear.",
@@ -2593,7 +2590,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "pattern.set",
           userAction: "Edit the selected entry.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([
       "Pattern / patternSet (pattern.set) builtInFitCheck.checkedBuiltIns must include collectionActions when the custom control owns a growable, removable, selectable, or reorderable runtime item set.",
     ]);
@@ -2655,7 +2652,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shape.kind",
           userAction: "Choose each shape icon button.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([
       "Shape / shapeButtons (shape.kind) builtInFitCheck.whyInsufficient cannot justify a custom control only with icons, layout, styling, or custom buttons; name the product interaction or value model that built-ins cannot express.",
     ]);
@@ -2717,7 +2714,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "focal.point",
           userAction: "Drag the focal point.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -2777,7 +2774,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "glyph.ramp",
           userAction: "Upload, reorder, and remove glyphs.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -2826,7 +2823,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "field.opacityRange",
           userAction: "Drag both Opacity handles.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Field / opacityRange (field.opacityRange) rangeSlider defaultValue must start with different lower and upper values so the two-thumb control does not collapse into a single-value slider.",
@@ -2909,7 +2906,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "field.speed",
           userAction: "Drag the Speed slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Field layoutGroups inline row "opacityRange, speed" includes rangeSlider opacityRange. RangeSlider is a full-width two-thumb control and must not share a row with another slider or range slider.',
@@ -2960,7 +2957,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "glass.strength",
           userAction: "Drag the Strength slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Glass / strength (glass.strength) uses unit "x", but Toolcraft slider values do not use x suffixes. Omit unit for scale, multiplier, intensity, opacity, strength, depth, and shader amount values unless a real measurement unit applies.',
@@ -3024,7 +3021,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "mesh.gradient",
           userAction: "Change every visible part of the Gradient control.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -3136,7 +3133,27 @@ describe("Toolcraft template app acceptance coverage", () => {
   });
 
   it("publishes control order targets for app schema tests", () => {
-    expect(getToolcraftControlOrderTargets(appSchema)).toEqual([]);
+    expect(getToolcraftControlOrderTargets(appSchema)).toEqual([
+      "paint.currentPigmentColor",
+      "brush.hairType",
+      "brush.type",
+      "brush.size",
+      "brush.waterCharge",
+      "paint.mixingArea",
+      "paint.mixingArea.reset",
+      "paper.dryingSpeed",
+      "paper.reliefHeight",
+      "paper.roughness",
+      "canvas.paintLayer",
+      "dynamics.edgeDarkening",
+      "dynamics.granulation",
+      "dynamics.pigmentOpacity",
+      "dynamics.wetnessSpread",
+      "export.includeBackground",
+      "appearance.background",
+      "export.image.format",
+      "export.image.resolution",
+    ]);
   });
 
   it("defaults generated apps to new Toolcraft assembly mode", () => {
@@ -4496,7 +4513,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "actions.output",
           userAction: "Click Reset and Export PNG.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining("must not include Reset footer actions (reset)"),
@@ -4552,7 +4569,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "actions.output",
           userAction: "Click Export PNG.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining("must expose a user-facing background color control"),
@@ -4623,7 +4640,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "actions.output",
           userAction: "Click Export PNG.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining('separate controls section titled "Background"'),
@@ -4694,7 +4711,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         target: "actions.output",
         userAction: "Toggle Include background, change Background, then click Export PNG.",
       },
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -4757,7 +4774,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "actions.output",
           userAction: "Toggle Include background, change Background, then click Export PNG.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -4821,7 +4838,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Toggle Include off, verify preview has no product background, export PNG with alpha, and verify video export keeps the background.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Apps with Export PNG must expose image export settings in a separate controls section titled "Image Export" directly above sticky footer export actions or directly before "Video Export" when video export also exists.',
@@ -4903,7 +4920,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Set format to JPG and resolution to 8K, then export and decode the output image to verify file type and long-edge dimensions.",
         },
-      ]),
+      ], appTransferMode, []),
     ).not.toEqual(
       expect.arrayContaining([
         expect.stringContaining("Image Export"),
@@ -4975,7 +4992,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Export video and PNG from the same timeline state, then verify both files exist.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Apps with Export PNG must expose image export settings in a separate controls section titled "Image Export" directly above sticky footer export actions or directly before "Video Export" when video export also exists.',
@@ -5064,7 +5081,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Choose JPG and 8K, choose MP4 and Current, then export PNG and video and verify both outputs use their selected settings.",
         },
-      ]),
+      ], appTransferMode, []),
     ).not.toEqual(
       expect.arrayContaining([
         expect.stringContaining("Image Export"),
@@ -5116,7 +5133,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithDisabledDependency, [
         makeControlAcceptance("distribution.fillMode", "segmented"),
         makeControlAcceptance("distribution.fillAmount", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5173,7 +5190,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           "Fill level changes partial fill output and becomes disabled when Fill mode is Full.",
         userAction: "Switch Fill mode to Full, verify Fill level is disabled, then switch to Partial and drag it.",
       },
-    ]);
+    ], appTransferMode, []);
 
     expect(branchErrors).toEqual(
       expect.arrayContaining([
@@ -5211,7 +5228,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schemaWithDisabledControl, [
         makeControlAcceptance("distribution.fillAmount", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5262,7 +5279,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithVisibleDependency, [
         makeControlAcceptance("shapes.shadeCount", "slider"),
         makeControlAcceptance("shapes.color3", "color"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5319,8 +5336,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             "Shade 3 is hidden while Shades is below 3, becomes visible at 3, and changes the third active shape color.",
           userAction: "Set Shades to 2 and verify Shade 3 is hidden; set Shades to 3 and edit Shade 3.",
         },
-      ],
-    );
+      ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -5363,7 +5379,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithActionLabels, [
         makeControlAcceptance("style.crt", "switch"),
         makeControlAcceptance("overlay.guides", "checkbox"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5406,7 +5422,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schemaWithContextLabels, [
       makeControlAcceptance("style.crt", "switch"),
       makeControlAcceptance("overlay.guides", "checkbox"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -5441,7 +5457,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schemaWithDuplicateToggleLabel, [
         makeControlAcceptance("export.includeBackground", "switch"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5478,7 +5494,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schemaWithDuplicateActionLabel, [
         makeControlAcceptance("flow.washSignal", "actions"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5514,7 +5530,7 @@ describe("Toolcraft template app acceptance coverage", () => {
 
     const errors = validateToolcraftAcceptanceCoverage(schemaWithContextActionLabel, [
       makeControlAcceptance("flow.washSignal", "actions"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -5564,7 +5580,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schema, [
       makeControlAcceptance("export.includeBackground", "switch"),
       makeControlAcceptance("appearance.background", "color"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([
@@ -5615,7 +5631,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schema, [
       makeControlAcceptance("animation.loop", "switch"),
       makeControlAcceptance("animation.duration", "text"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([expect.stringContaining("compact toggle-plus-parameter row")]),
@@ -5648,7 +5664,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("button.text", "code"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining("uses CodeTextarea for short single-line text"),
@@ -5684,7 +5700,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("generation.prompt", "code"),
-      ]),
+      ], appTransferMode, []),
     ).not.toEqual(
       expect.arrayContaining([
         expect.stringContaining("uses CodeTextarea for short single-line text"),
@@ -5732,7 +5748,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("animation.loop", "switch"),
         makeControlAcceptance("animation.duration", "text"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5786,7 +5802,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("text.enabled", "switch"),
         makeControlAcceptance("text.dragTarget", "segmented"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5836,7 +5852,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("export.transparentBackground", "switch"),
         makeControlAcceptance("appearance.background", "color"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
@@ -5885,7 +5901,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schema, [
       makeControlAcceptance("style.glow", "switch"),
       makeControlAcceptance("animation.loop", "switch"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([expect.stringContaining("two-column toggle row")]),
@@ -5925,7 +5941,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("icon.snapX", "switch"),
         makeControlAcceptance("icon.snapY", "switch"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Icon Mark has adjacent short toggle controls "snapX" and "snapY" for the same product entity "icon". Put them in a two-column inline layoutGroup so compact paired toggles share one row.',
@@ -5972,7 +5988,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schema, [
       makeControlAcceptance("icon.snapX", "switch"),
       makeControlAcceptance("icon.snapY", "switch"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).not.toEqual(
       expect.arrayContaining([expect.stringContaining("compact paired toggles share one row")]),
@@ -6019,7 +6035,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schema, [
         makeControlAcceptance("output.background", "switch"),
         makeControlAcceptance("debug.diagnosticOverlay", "switch"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Output layoutGroups inline row "background, diagnosticOverlay" includes switch labels diagnosticOverlay "Diagnostic overlay" that are too long for a two-column toggle row. Switches share a row only when every visible label fits without truncation; shorten labels or stack them.',
@@ -6306,8 +6322,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           referenceName: "legacy iframe shell",
           referenceTimeline: { behaviorCoverage: [], mode: "none" },
           sourceOfTruth: "reference-runtime",
-        },
-      ),
+        }, []),
     ).toContain(
       "reference-runtime-clone must keep the Toolcraft canvas shell enabled; preserve the reference renderer inside ToolcraftApp canvasContent instead of replacing the app with the original UI.",
     );
@@ -6462,8 +6477,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           referenceName: "legacy playback animation",
           referenceTimeline: { behaviorCoverage: ["playback"], mode: "toolcraft-playback" },
           sourceOfTruth: "reference-runtime",
-        },
-      ),
+        }, []),
     ).toContain(
       'referenceTimeline mode "toolcraft-playback" must declare loopDuration with source, seconds, and evidence. Do not let runtime/template fallback duration such as 8s stand in for reference loop intent.',
     );
@@ -6509,8 +6523,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "toolcraft-playback",
           },
           sourceOfTruth: "reference-runtime",
-        },
-      ),
+        }, []),
     ).toContain(
       "panels.timeline.defaultDurationSeconds (8) must match referenceTimeline.loopDuration.seconds (6).",
     );
@@ -6548,8 +6561,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           referenceName: "legacy keyframe animation",
           referenceTimeline: { behaviorCoverage: ["keyframes"], mode: "toolcraft-keyframes" },
           sourceOfTruth: "reference-runtime",
-        },
-      ),
+        }, []),
     ).toContain(
       'referenceTimeline mode "toolcraft-keyframes" must declare loopDuration with source, seconds, and evidence. Do not let runtime/template fallback duration such as 8s stand in for reference loop intent.',
     );
@@ -6626,7 +6638,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "animation.actions",
           userAction: "Click Restart.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Run / pause (animation.paused) looks like an app-wide timeline transport control. Play, Pause, Animate, Resume, and Restart animation belong to the top timeline; keep right-panel controls for renderer parameters, generation/apply actions, and output delivery.",
@@ -6678,7 +6690,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "animation.pause",
           userAction: "Toggle Pause.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       "Animation / pause (animation.pause) looks like an app-wide timeline transport control. Play, Pause, Animate, Resume, and Restart animation belong to the top timeline; keep right-panel controls for renderer parameters, generation/apply actions, and output delivery.",
     );
@@ -6716,7 +6728,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schemaWithAnimationControls, [
         makeControlAcceptance("animation.speed", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       'Animation controls "Animation / speed" (animation.speed) exist while panels.timeline is omitted. Use panels.timeline mode "playback" for product animation transport, mode "keyframes" for editable keyframes, or declare appTransferMode.animationIntent mode "autonomous" with coverage proving there is no user-facing transport.',
     );
@@ -6778,8 +6790,7 @@ describe("Toolcraft template app acceptance coverage", () => {
               "The shimmer is decorative self-running output and does not expose product time transport.",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toEqual([]);
   });
 
@@ -6873,8 +6884,7 @@ describe("Toolcraft template app acceptance coverage", () => {
               "The shader is decorative self-running output with no transport controls.",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       'appTransferMode.animationIntent mode "autonomous" conflicts with Export Video. Video export creates product-time behavior, so the renderer and export must use the top Toolcraft timeline duration, loop, and deterministic timestamps.',
     );
@@ -6899,8 +6909,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "timeline-keyframes",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       'appTransferMode.animationIntent mode "timeline-keyframes" requires panels.timeline mode "keyframes".',
     );
@@ -7106,7 +7115,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     };
 
     expect(
-      validateToolcraftAcceptanceCoverage(layersSchema, appAcceptance),
+      validateToolcraftAcceptanceCoverage(layersSchema, appAcceptance, appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'panels.layers requires a runtime acceptance entry with layerCoverage "selection" proving layer selection behavior.',
@@ -7161,7 +7170,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "selectedLayer.opacity",
           userAction: "Drag the Opacity slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Layer / opacity (selectedLayer.opacity) uses reserved selectedLayer.* target without panels.layers enabled. Use an app-specific target for single-layer apps or enable layers with layerCoverage.",
@@ -7271,7 +7280,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "selectedLayer.opacity",
           userAction: "Drag the Opacity slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Layer / opacity (selectedLayer.opacity) targets selectedLayer.* and must have acceptance layerCoverage "selected-layer-controls" proving the control edits the currently selected layer output.',
@@ -7433,7 +7442,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.grain",
           userAction: "Drag the Grain slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -7506,7 +7515,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "ascii.verticalJitter",
           userAction: "Drag the Vertical jitter slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Mask / maskGap (ascii.maskGap) has 13 semantic integer positions and must use variant "discrete" so Toolcraft renders tick markers.',
@@ -7583,7 +7592,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "animation.depth",
           userAction: "Drag the Flip depth slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Motion / depth (animation.depth) has 25 semantic integer positions and must use variant "discrete" so Toolcraft renders tick markers.',
@@ -7660,7 +7669,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "ascii.flipDurationSec",
           userAction: "Drag the Flip duration slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -7709,7 +7718,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.grain",
           userAction: "Drag the Grain slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Volume / grain (shader.grain) discrete slider must render one marker per step; expected markerCount 11, received 6.",
@@ -7762,7 +7771,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "ascii.speed",
           userAction: "Drag the Reveal speed slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Timing / revealSpeed (ascii.speed) declares variant "discrete" with 151 positions, which would overload tick markers. Keep it stepped continuous or use a different control.',
@@ -7812,7 +7821,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.grain",
           userAction: "Drag the Grain slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -7862,7 +7871,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithWeakSectionTitles, [
         makeControlAcceptance("shader.amount", "slider"),
         makeControlAcceptance("shader.grain", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Settings is too generic for a controls section. Name the product entity, workflow stage, or behavior it edits instead of using a bucket title.",
@@ -7915,7 +7924,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     expect(
       validateToolcraftAcceptanceCoverage(schemaWithMissingTitle, [
         makeControlAcceptance("shader.amount", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "untitled section 2 is missing a controls section title. Every visible controls-panel section must name the product entity, workflow stage, or behavior it edits.",
@@ -8067,8 +8076,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             "The flow speed is a decorative self-running effect and does not expose product time transport.",
         },
         mode: "new-toolcraft-app",
-      },
-    );
+      }, []);
 
     expect(errors).toEqual(
       expect.arrayContaining([
@@ -8149,8 +8157,7 @@ describe("Toolcraft template app acceptance coverage", () => {
               "The flow speed is a decorative self-running effect and does not expose product time transport.",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toEqual([]);
   });
 
@@ -8200,7 +8207,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithDuplicateSections, [
         makeControlAcceptance("shape.primary.count", "slider"),
         makeControlAcceptance("shape.secondary.radius", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Controls panel repeats the section title "Shape" 2 times. Section titles must be unique and describe distinct product entities or workflow stages.',
@@ -8254,8 +8261,7 @@ describe("Toolcraft template app acceptance coverage", () => {
               "The motion speed is a decorative self-running effect and does not expose product time transport.",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toEqual([]);
   });
 
@@ -8308,7 +8314,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("shader.amount", "slider"),
         makeControlAcceptance("pattern.color", "color"),
         makeControlAcceptance("pattern.symbolScale", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Settings / amount label "Amount" is too generic in this context. Short labels are allowed when the nearest visible section or group clearly names the affected product entity. Rename it to "Shader amount".',
@@ -8354,7 +8360,7 @@ describe("Toolcraft template app acceptance coverage", () => {
     const errors = validateToolcraftAcceptanceCoverage(schemaWithMixedStyleControls, [
       makeControlAcceptance("background.opacity", "slider"),
       makeControlAcceptance("pattern.color", "color"),
-    ]);
+    ], appTransferMode, []);
 
     expect(errors).toEqual(
       expect.arrayContaining([
@@ -8420,7 +8426,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("squares.right.connections", "text"),
         makeControlAcceptance("squares.right.hoverRadius", "slider"),
         makeControlAcceptance("squares.right.color", "color"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Controls for product entity "squares.right" are split across sections: Square 1 (Right), Appearance. Keep controls for the same product entity in one semantic section unless the Control Section Inventory declares workflowStage and splitReason for every split section.',
@@ -8475,7 +8481,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("squares.right.connections", "text"),
         makeControlAcceptance("squares.right.color", "color"),
         makeControlAcceptance("squares.right.hoverRadius", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -8664,7 +8670,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithSplitModeBranch, [
         makeControlAcceptance("source.mode", "segmented"),
         makeControlAcceptance("source.upload", "fileDrop"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Image / sourceUpload is gated by visibleWhen target "source.mode" in Source, but it belongs to the same dependency group. Keep selectors and their dependent controls in one semantic section when they describe one product entity or branch; use visibleWhen for branch-specific controls inside that section instead of splitting branch controls into their own section. Do not use disabledWhen for product controls.',
@@ -8717,7 +8723,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       validateToolcraftAcceptanceCoverage(schemaWithSplitOptionBranch, [
         makeControlAcceptance("shape.kind", "segmented"),
         makeControlAcceptance("asset.upload", "fileDrop"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Library / libraryAsset is gated by visibleWhen target "shape.kind" in Shape, but it belongs to the same dependency group. Keep selectors and their dependent controls in one semantic section when they describe one product entity or branch; use visibleWhen for branch-specific controls inside that section instead of splitting branch controls into their own section. Do not use disabledWhen for product controls.',
@@ -8799,7 +8805,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         fontAcceptance,
         makeControlAcceptance("text.case", "select"),
         colorAcceptance,
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Text / textCase splits "Case" out of the FontPicker-owned typography block for "text". Keep font family, weight, size, case, letter spacing, line height, color, and opacity in the same fontPicker value.',
@@ -8857,7 +8863,7 @@ describe("Toolcraft template app acceptance coverage", () => {
 
     expect(validateToolcraftAcceptanceCoverage(schemaWithRedundantFontHelp, [
       fontAcceptance,
-    ])).toEqual(
+    ], appTransferMode, [])).toEqual(
       expect.arrayContaining([
         "Font / font description repeats FontPicker-owned fields (font family, font weight, font size, case, color, opacity, letter spacing, line height). FontPicker help must explain only non-obvious product behavior; use section titles and visible field labels for font family, weight, size, case, color, opacity, letter spacing, and line height, or omit description.",
       ]),
@@ -8910,7 +8916,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       makeControlAcceptance("beads.color1", "color"),
       makeControlAcceptance("beads.color2", "color"),
       makeControlAcceptance("beads.colorSpread", "slider"),
-    ])).toEqual(
+    ], appTransferMode, [])).toEqual(
       expect.arrayContaining([
         "Bead Colors / color1 description adds a help icon to an obvious color-section control. Omit control.description when the section title and visible label already explain the setting.",
         "Bead Colors / color2 description adds a help icon to an obvious color-section control. Omit control.description when the section title and visible label already explain the setting.",
@@ -8962,7 +8968,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("palette.accent1", "color"),
         makeControlAcceptance("palette.accent2", "color"),
         makeControlAcceptance("palette.spread", "slider"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Accent Shades / accent1 uses visible label "Color 1" for a palette variation color. When colors only add variety to one shared palette, set label: false or use collectionActions with unlabeled items. Keep visible labels only when each color edits a distinct user-facing entity such as Fill, Stroke, Background, Connector, or Object color.',
@@ -9011,7 +9017,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("palette.accent1", "color"),
         makeControlAcceptance("palette.accent2", "color"),
         makeControlAcceptance("palette.accent3", "color"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Accent Shades mixes labeled and unlabeled color items in one palette variation group. Decide label visibility for the whole group: omit all per-item labels when colors only add variety, or label every item only when each color has a distinct user-facing role.",
@@ -9082,7 +9088,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         makeControlAcceptance("palette.spread", "slider"),
         makeControlAcceptance("object.fill", "color"),
         makeControlAcceptance("object.stroke", "color"),
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -9155,7 +9161,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.mode",
           userAction: "Select each Mode option.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Volume / mode (shader.mode) has orderRole "mode" after depth (shader.depth) with orderRole "strength". Move mode/input/primary controls before dependent strength/detail/advanced controls or split them into an earlier section.',
@@ -9246,7 +9252,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.depth",
           userAction: "Drag the Depth slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual([]);
   });
 
@@ -9299,7 +9305,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "shader.fxPreset",
           userAction: "Select each FX Preset option.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Style / preset (shader.fxPreset) segmented controls must preserve cell padding: use at most 4 short options (max 9 characters per label and 24 total) or shorten labels first; if the compact names still exceed the budget, use a select dropdown instead.",
@@ -9316,7 +9322,7 @@ describe("Toolcraft template app acceptance coverage", () => {
       },
     };
 
-    expect(validateToolcraftAcceptanceCoverage(schemaWithPlaybackTimeline, [])).toEqual(
+    expect(validateToolcraftAcceptanceCoverage(schemaWithPlaybackTimeline, [], appTransferMode, [])).toEqual(
       expect.arrayContaining([
         'panels.timeline mode "playback" requires a runtime acceptance entry with timelineCoverage "playback" proving pause, scrub, duration/loop, and rendered-frame behavior.',
       ]),
@@ -9351,7 +9357,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           timelinePlaybackCoverage: ["pause-resume", "scrub", "rendered-frame"],
           userAction: "Pause, scrub, and resume timeline playback.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       'timeline.playback timelineCoverage "playback" must declare timelinePlaybackCoverage for pause-resume, scrub, duration, loop, and rendered-frame. Duration coverage must prove renderer progress maps 0..state.timeline.durationSeconds, not a local fixed animation duration.',
     );
@@ -9373,8 +9379,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         {
           animationIntent: { mode: "timeline-playback" },
           mode: "new-toolcraft-app",
-        } as unknown as ToolcraftTransferMode,
-      ),
+        } as unknown as ToolcraftTransferMode, []),
     ).toContain(
       'appTransferMode.animationIntent mode "timeline-playback" must declare loopDuration with source, seconds, and evidence. Do not let runtime/template fallback duration such as 8s stand in for product loop intent.',
     );
@@ -9396,8 +9401,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         {
           animationIntent: { mode: "none" },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       'panels.timeline mode "playback" requires appTransferMode.animationIntent mode "timeline-playback" with loopDuration provenance.',
     );
@@ -9419,8 +9423,7 @@ describe("Toolcraft template app acceptance coverage", () => {
         {
           animationIntent: { mode: "none" },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       'panels.timeline mode "keyframes" requires appTransferMode.animationIntent mode "timeline-keyframes" with loopDuration provenance.',
     );
@@ -9450,8 +9453,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "timeline-playback",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       "panels.timeline.defaultDurationSeconds (8) must match appTransferMode.animationIntent.loopDuration.seconds (6).",
     );
@@ -9480,8 +9482,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "timeline-playback",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       "appTransferMode.animationIntent.loopDuration.evidence must not cite the runtime/template fallback 8s default as the product loop source. Use reference timing, an explicit user request, or a product-derived timing rule.",
     );
@@ -9511,8 +9512,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "timeline-playback",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toContain(
       "appTransferMode cites a video reference, screen recording, GIF, extracted frames, or contact sheet; declare videoReferenceStudy with storyboard frames, frame-to-frame transition analysis, behavior decomposition, and acceptance mapping before implementation.",
     );
@@ -9553,8 +9553,7 @@ describe("Toolcraft template app acceptance coverage", () => {
             mode: "timeline-playback",
           },
           mode: "new-toolcraft-app",
-        },
-      ),
+        }, []),
     ).toEqual([]);
   });
 
@@ -9594,8 +9593,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           },
           mode: "new-toolcraft-app",
           videoReferenceStudy: videoReferenceStudyEvidence,
-        },
-      ),
+        }, []),
     ).toEqual([]);
   });
 
@@ -9671,7 +9669,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           ],
           userAction: "Edit timeline duration, scrub the range, pause, and resume playback.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       'timeline.playback timelinePlaybackCoverage "loop" must prove a seamless forward-only product loop: motion advances in one direction, avoids mirror/yoyo/ping-pong/reverse fallbacks, first and last frames stitch without a visible jump, and the same seam holds after changing timeline duration.',
     );
@@ -9712,7 +9710,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Edit timeline duration and verify first and last frames stitch with no mirror fallback.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       'timeline.playback timelinePlaybackCoverage "loop" must prove a seamless forward-only product loop: motion advances in one direction, avoids mirror/yoyo/ping-pong/reverse fallbacks, first and last frames stitch without a visible jump, and the same seam holds after changing timeline duration.',
     );
@@ -9753,7 +9751,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           userAction:
             "Edit timeline duration and verify the loop remains forward-only with no mirror, yoyo, ping-pong, or reverse fallback.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toContain(
       'timeline.playback timelinePlaybackCoverage "loop" must prove a seamless forward-only product loop: motion advances in one direction, avoids mirror/yoyo/ping-pong/reverse fallbacks, first and last frames stitch without a visible jump, and the same seam holds after changing timeline duration.',
     );
@@ -9865,7 +9863,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           target: "style.mode",
           userAction: "Select each Mode option.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         'Style / opacity (style.opacity) is keyframe-capable by Toolcraft control type and must have acceptance timelineCoverage "keyframes" proving its diamond creates/updates a keyframe row and changes evaluated output.',
@@ -9956,7 +9954,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           timelineCoverage: "keyframes",
           userAction: "Drag the Blur slider.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Style / blur (style.blur) is keyframe-capable by Toolcraft control type; remove keyframeable: false and provide keyframe evaluator coverage instead of hiding the diamond.",
@@ -10049,7 +10047,7 @@ describe("Toolcraft template app acceptance coverage", () => {
           timelineCoverage: "keyframes",
           userAction: "Select each Mode option.",
         },
-      ]),
+      ], appTransferMode, []),
     ).toEqual(
       expect.arrayContaining([
         "Mode / mode (shader.mode) sets keyframeable true, but this control type or runtime-owned target cannot create timeline keyframes.",
